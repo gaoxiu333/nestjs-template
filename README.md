@@ -1,6 +1,12 @@
 ## Nestjs Template
 - .env config
-- CORD
+- CORS
 - prisma
 - jwt: 结合 Passport 实现 JWT 认证
 - API 文档: Swagger
+- class-validator 和 class-transformer
+- 任务调度
+- 日志存储
+- 异常处理
+- 缓存
+- 性能监控与分析
