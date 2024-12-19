@@ -1,4 +1,4 @@
-## Nextjs Template
+## Nestjs Template
 - .env config
 - CORD
 - prisma
