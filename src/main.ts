@@ -3,19 +3,35 @@ import { ConfigService } from '@nestjs/config';
 
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { AllConfigType } from './config/config.type';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { cors: true });
-  const configService = app.get(ConfigService);
+  const configService = app.get(ConfigService<AllConfigType>);
+  app.enableShutdownHooks(); // 优雅关闭
+
+  /** 通过配置文件设置全局前缀，实现版本管理 */
+  // app.setGlobalPrefix(
+  //   configService.getOrThrow('app.apiPrefix', { infer: true }),
+  //   {
+  //     exclude: ['/'],
+  //   },
+  // );
+
+  //  app.enableVersioning({
+  //    type: VersioningType.URI,
+  //  });
 
   const config = new DocumentBuilder()
     .setTitle('Nestjs Template')
     .setDescription('Nestjs Template swagger')
     .setVersion('1.0')
+    .addBearerAuth()
     .build();
-  const documentFactory = () => SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, documentFactory);
 
-  await app.listen(configService.get('PORT') ?? 3000);
+  const documentFactory = () => SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('docs', app, documentFactory);
+
+  await app.listen(configService.getOrThrow('app.port', { infer: true }));
 }
-bootstrap();
+void bootstrap();
