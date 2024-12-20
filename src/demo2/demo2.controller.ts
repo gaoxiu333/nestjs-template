@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Version,
+} from '@nestjs/common';
 import { Demo2Service } from './demo2.service';
 import { CreateDemo2Dto } from './dto/create-demo2.dto';
 import { UpdateDemo2Dto } from './dto/update-demo2.dto';
@@ -9,6 +18,7 @@ export class Demo2Controller {
   constructor(private readonly demo2Service: Demo2Service) {}
 
   @SkipAuth()
+  @Version('1')
   @Post()
   create(@Body() createDemo2Dto: CreateDemo2Dto) {
     return this.demo2Service.create(createDemo2Dto);

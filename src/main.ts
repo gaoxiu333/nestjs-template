@@ -4,23 +4,27 @@ import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AllConfigType } from './config/config.type';
+import { useContainer } from 'class-validator';
+import { VersioningType } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { cors: true });
+  useContainer(app.select(AppModule), { fallbackOnErrors: true }); // 解决class-validator无法注入的问题
   const configService = app.get(ConfigService<AllConfigType>);
+
   app.enableShutdownHooks(); // 优雅关闭
 
   /** 通过配置文件设置全局前缀，实现版本管理 */
-  // app.setGlobalPrefix(
-  //   configService.getOrThrow('app.apiPrefix', { infer: true }),
-  //   {
-  //     exclude: ['/'],
-  //   },
-  // );
+  app.setGlobalPrefix(
+    configService.getOrThrow('app.apiPrefix', { infer: true }),
+    {
+      exclude: ['/'],
+    },
+  );
 
-  //  app.enableVersioning({
-  //    type: VersioningType.URI,
-  //  });
+  app.enableVersioning({
+    type: VersioningType.URI,
+  });
 
   const config = new DocumentBuilder()
     .setTitle('Nestjs Template')
