@@ -27,3 +27,6 @@
 
 ## TODO
 - 参数验证：https://docs.nestjs.com/techniques/validation
+
+## Cheat sheet
+[参考](https://www.scribd.com/document/610314721/Nest-Cheatsheet)

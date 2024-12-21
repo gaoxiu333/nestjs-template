@@ -1,5 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
+import { WINSTON_MODULE_NEST_PROVIDER, WinstonModule } from 'nest-winston';
 
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -8,7 +9,15 @@ import { useContainer } from 'class-validator';
 import { VersioningType } from '@nestjs/common';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, { cors: true });
+  const app = await NestFactory.create(AppModule, {
+    cors: true,
+    // logger:console,
+    logger: WinstonModule.createLogger({
+      // options (same as WinstonModule.forRoot() options)
+    }),
+  });
+  app.useLogger(app.get(WINSTON_MODULE_NEST_PROVIDER));
+
   useContainer(app.select(AppModule), { fallbackOnErrors: true }); // 解决class-validator无法注入的问题
   const configService = app.get(ConfigService<AllConfigType>);
 
