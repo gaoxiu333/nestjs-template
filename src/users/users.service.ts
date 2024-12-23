@@ -1,10 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { UserDto } from './dto/user.dto';
 import { PrismaService } from 'nestjs-prisma';
 import { CreateUserDto } from './dto/create-user.dto';
-
-// This should be a real class/interface representing a user entity
-export type User = any;
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 @Injectable()
 export class UsersService {
@@ -12,7 +10,7 @@ export class UsersService {
 
   // 创建用户
   async create(data: CreateUserDto): Promise<any> {
-    this.prisma.user.create({
+    return this.prisma.user.create({
       data: {
         username: data.username,
         password: data.password,
@@ -31,17 +29,17 @@ export class UsersService {
     });
   }
   // 查询用户
-  async findAll(): Promise<User[]> {
+  async findAll(): Promise<any[]> {
     return this.prisma.user.findMany();
   }
   // 根据id查询用户
-  async findById(id: string): Promise<User> {
+  async findById(id: string): Promise<any> {
     return this.prisma.user.findUnique({
       where: { id },
     });
   }
   // 根据用户名查询用户
-  async findByUsername(username: string): Promise<User> {
+  async findByUsername(username: string): Promise<any> {
     return this.prisma.user.findUnique({
       where: { username },
     });
@@ -51,5 +49,33 @@ export class UsersService {
     this.prisma.user.delete({
       where: { id },
     });
+  }
+  // 更新用户密码
+  async changePassword(
+    id: string,
+    password: string,
+    changePassword: ChangePasswordDto,
+  ): Promise<any> {
+    const passwordIsCorrect = await this.validatePassword(
+      changePassword,
+      password,
+    );
+    if (!passwordIsCorrect) {
+      throw new BadRequestException('密码错误');
+    }
+    this.prisma.user.update({
+      where: { id },
+      data: {
+        password: changePassword.newPassword,
+      },
+    });
+  }
+
+  // validatePassword
+  async validatePassword(
+    changePassword: ChangePasswordDto,
+    password: any,
+  ): Promise<boolean> {
+    return changePassword.oldPassword === password;
   }
 }

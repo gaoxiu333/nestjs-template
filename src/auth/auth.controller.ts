@@ -10,7 +10,6 @@ import {
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SkipAuth } from './decorators/public.decorator';
-import { LoginDto } from './dto/login.dto';
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
 
 @Controller('auth')
@@ -31,6 +30,7 @@ export class AuthController {
     return this.authService.signIn(signInDto);
   }
 
+  @SkipAuth()
   @Post('register')
   register(@Body() registerDto: CreateUserDto) {
     return this.authService.register(registerDto);

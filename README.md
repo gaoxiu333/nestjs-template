@@ -26,6 +26,8 @@
 
 ## TODO
 - 参数验证：https://docs.nestjs.com/techniques/validation
+- 是怎么通过 token 转换成个人数据来着？
+  - passport 除了验证，还能用户信息放在每一个路由内！！！！！上次竟然没有集成完，整的是半途而废，我到底半途而废了多少东西！！！
 
 ## Cheat sheet
 [参考](https://www.scribd.com/document/610314721/Nest-Cheatsheet)
