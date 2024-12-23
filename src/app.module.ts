@@ -10,6 +10,8 @@ import { DemoModule } from './demo/demo.module';
 import { Demo2Module } from './demo2/demo2.module';
 import appConfig from './config/app.config';
 import { loggerConfig } from './config/logger.config';
+import { RolesModule } from './roles/roles.module';
+import { PrismaModule } from 'nestjs-prisma';
 
 @Module({
   imports: [
@@ -19,10 +21,14 @@ import { loggerConfig } from './config/logger.config';
       load: [appConfig], // TODO: add env config file：https://docs.nestjs.com/techniques/configuration
       envFilePath: ['.env'],
     }),
+    PrismaModule.forRoot({
+      isGlobal: true,
+    }),
     AuthModule,
     UsersModule,
     DemoModule,
     Demo2Module,
+    RolesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

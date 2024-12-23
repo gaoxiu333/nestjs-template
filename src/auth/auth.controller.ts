@@ -10,6 +10,8 @@ import {
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SkipAuth } from './decorators/public.decorator';
+import { LoginDto } from './dto/login.dto';
+import { CreateUserDto } from 'src/users/dto/create-user.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -19,15 +21,19 @@ export class AuthController {
   @SkipAuth()
   @HttpCode(HttpStatus.OK)
   @Post('login')
-  signIn(@Body() signInDto: Record<string, any>) {
+  signIn(@Body() signInDto: CreateUserDto) {
     console.log('signInDto', signInDto);
     this.logger.debug('aaa', AuthController.name);
     this.logger.error('bbb', AuthController.name);
     this.logger.log('ccc', AuthController.name);
     this.logger.verbose('ddd', AuthController.name);
     this.logger.warn('eee', AuthController.name);
-    return {};
-    return this.authService.signIn(signInDto.username, signInDto.password);
+    return this.authService.signIn(signInDto);
+  }
+
+  @Post('register')
+  register(@Body() registerDto: CreateUserDto) {
+    return this.authService.register(registerDto);
   }
 
   @Get('profile')

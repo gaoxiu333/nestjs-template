@@ -20,7 +20,6 @@
 - admin 管理后台
 - 要不要改成 单仓库？
 - 那部署怎么办
-- 自动更新依赖：Renovate
 
 ## auth
 - 使用bcrypt之类的库，使用加盐单向哈希算法
@@ -30,3 +29,4 @@
 
 ## Cheat sheet
 [参考](https://www.scribd.com/document/610314721/Nest-Cheatsheet)
+

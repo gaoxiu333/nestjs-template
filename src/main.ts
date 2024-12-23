@@ -11,10 +11,7 @@ import { VersioningType } from '@nestjs/common';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     cors: true,
-    // logger:console,
-    logger: WinstonModule.createLogger({
-      // options (same as WinstonModule.forRoot() options)
-    }),
+    bufferLogs: true,
   });
   app.useLogger(app.get(WINSTON_MODULE_NEST_PROVIDER));
 

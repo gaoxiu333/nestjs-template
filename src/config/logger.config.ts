@@ -8,8 +8,11 @@ export const loggerConfig: WinstonModuleOptions = {
     new winston.transports.Console({
       format: winston.format.combine(
         winston.format.timestamp(),
-        winston.format.colorize(),
-        winston.format.simple(),
+        winston.format.ms(),
+        winston.format.colorize({ all: true }),
+        winston.format.printf(({ level, message, timestamp, ms, context }) => {
+          return `[Nest] ${timestamp} ${context ? '[' + context + ']' : ''} ${level}: ${message} ${ms}`;
+        }),
       ),
     }),
 
