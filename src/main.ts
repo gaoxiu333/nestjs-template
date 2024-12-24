@@ -1,13 +1,14 @@
 import { HttpAdapterHost, NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
-
-import { AppModule } from './app.module';
+import { PrismaClientExceptionFilter } from 'nestjs-prisma';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { useContainer } from 'class-validator';
 import { VersioningType } from '@nestjs/common';
-import { PrismaClientExceptionFilter } from 'nestjs-prisma';
+import { AppModule } from './app.module';
 import { AppConfig } from './config/app-config.type';
+import { SuccessInterceptor } from './core/interceptor/success.interceptor';
+import { ErrorInterceptor } from './core/interceptor/error.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -15,6 +16,9 @@ async function bootstrap() {
   });
 
   app.useLogger(app.get(WINSTON_MODULE_NEST_PROVIDER));
+
+  // 注册全局拦截器
+  app.useGlobalInterceptors(new SuccessInterceptor(), new ErrorInterceptor());
 
   useContainer(app.select(AppModule), { fallbackOnErrors: true }); // 解决class-validator无法注入的问题
   const configService = app.get(ConfigService<AppConfig>);
