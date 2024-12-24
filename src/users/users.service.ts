@@ -13,8 +13,10 @@ export class UsersService {
     console.log('data', data);
     return this.prisma.user.create({
       data: {
+        ...data,
         username: data.username,
         password: data.password,
+        email: data.email,
         role: 'ADMIN',
       },
     });
@@ -37,6 +39,12 @@ export class UsersService {
   async findById(id: string): Promise<any> {
     return this.prisma.user.findUnique({
       where: { id },
+    });
+  }
+  // 根据邮箱查询用户
+  async findByEmail(email: string): Promise<any> {
+    return this.prisma.user.findUnique({
+      where: { email },
     });
   }
   // 根据用户名查询用户

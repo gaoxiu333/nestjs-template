@@ -15,10 +15,18 @@ import { LocalAuthGuard } from './guard/local.guard';
 import { LoginDto } from './dto/login.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiBearerAuth } from '@nestjs/swagger';
+import { AuthForgotPasswordDto } from './dto/auth-forgot-password.dto';
+import { AuthEmailLoginDto } from './dto/auth-email-login.dto';
 
 @Controller('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
+
+  @SkipAuth()
+  @Post('register')
+  register(@Body() registerDto: CreateUserDto) {
+    return this.authService.register(registerDto);
+  }
 
   @SkipAuth()
   @HttpCode(HttpStatus.OK)
@@ -27,18 +35,26 @@ export class AuthController {
     return this.authService.login(loginDto);
   }
 
-  @SkipAuth()
-  @Post('register')
-  register(@Body() registerDto: CreateUserDto) {
-    return this.authService.register(registerDto);
-  }
-
   // @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'))
   @Get('profile')
   getProfile(@Request() req) {
     return req.user;
+  }
+
+  // 通过邮箱登录
+  @Post('login/email')
+  loginEmail(@Body() authEmailLoginDto: AuthEmailLoginDto) {
+    // return this.authService.validateLogin(authEmailLoginDto);
+    return this.authService.loginEmail(authEmailLoginDto);
+  }
+
+  /* 忘记密码 */
+  @SkipAuth()
+  @Post('forgot/password')
+  forgotPassword(@Body() authForgotPasswordDto: AuthForgotPasswordDto) {
+    return 'forgot password';
   }
 
   // 退出登录

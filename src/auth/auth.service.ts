@@ -1,4 +1,9 @@
-import { HttpStatus, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  HttpStatus,
+  Injectable,
+  UnauthorizedException,
+  UnprocessableEntityException,
+} from '@nestjs/common';
 import { compare, hash } from 'bcrypt';
 import * as ms from 'ms';
 
@@ -8,6 +13,9 @@ import { UsersService } from '../users/users.service';
 import { LoginDto } from './dto/login.dto';
 import { ConfigService } from '@nestjs/config';
 import { SecurityConfig } from 'src/config/app-config.type';
+import { AuthForgotPasswordDto } from './dto/auth-forgot-password.dto';
+import { AuthEmailLoginDto } from './dto/auth-email-login.dto';
+import { NotFoundError } from 'rxjs';
 
 @Injectable()
 export class AuthService {
@@ -16,7 +24,7 @@ export class AuthService {
     private jwtService: JwtService,
     private configService: ConfigService,
   ) {}
-
+  // 用户注册
   async register(createUserDto: CreateUserDto) {
     const hashedPassword = await this.hashPassword(createUserDto.password);
     const user = await this.usersService.create({
@@ -40,6 +48,39 @@ export class AuthService {
   async login(loginDto: LoginDto) {
     // TODO: 检查密码是否匹配
     return this.validateLogin(loginDto);
+  }
+
+  // 邮箱登录
+  async loginEmail(authEmailLoginDto: AuthEmailLoginDto) {
+    const user = await this.usersService.findByEmail(authEmailLoginDto.email);
+    if (!user) {
+      throw new UnauthorizedException({
+        status: HttpStatus.UNPROCESSABLE_ENTITY,
+        errors: {
+          email: '用户不存在',
+        },
+      });
+    }
+    const passwordValid = await this.validatePassword(
+      authEmailLoginDto.password,
+      user.password,
+    );
+    if (!passwordValid) {
+      throw new UnauthorizedException({
+        status: HttpStatus.UNPROCESSABLE_ENTITY,
+        errors: {
+          password: '密码不正确',
+        },
+      });
+    }
+    const { token, refreshToken, tokenExpiresIn } = await this.generateToken({
+      id: user.id,
+    });
+    return {
+      token,
+      refreshToken,
+      tokenExpiresIn,
+    };
   }
 
   // 检查登录
@@ -73,7 +114,6 @@ export class AuthService {
     }
     const { token, refreshToken, tokenExpiresIn } = await this.generateToken({
       id: user.id,
-      username: user.username,
     });
     return {
       token,
@@ -81,19 +121,12 @@ export class AuthService {
       tokenExpiresIn,
     };
   }
-  private async generateToken({
-    id,
-    username,
-  }: {
-    id: string;
-    username: string;
-  }) {
+  private async generateToken({ id }: { id: string }) {
     const securityConfig = this.configService.get<SecurityConfig>('security');
     const tokenExpiresIn = Date.now() + ms(securityConfig.expiresIn);
     const [token, refreshToken] = await Promise.all([
       await this.jwtService.signAsync({
         id: id,
-        username: username,
       }),
       await this.jwtService.signAsync({}),
     ]);
@@ -117,8 +150,7 @@ export class AuthService {
   }
 
   get bcryptSaltRounds(): string | number {
-    const securityConfig =
-      this.configService.get<SecurityConfig>('app.security');
+    const securityConfig = this.configService.get<SecurityConfig>('security');
     const saltOrRounds = securityConfig.bcryptSaltOrRound;
 
     return Number.isInteger(Number(saltOrRounds))
@@ -131,11 +163,37 @@ export class AuthService {
   }
 
   private generateRefreshToken(payload: { username: string }): string {
-    const securityConfig =
-      this.configService.get<SecurityConfig>('app.security');
+    const securityConfig = this.configService.get<SecurityConfig>('security');
     return this.jwtService.sign(payload, {
       secret: this.configService.get('JWT_REFRESH_SECRET'),
       expiresIn: securityConfig.refreshIn,
     });
+  }
+
+  // 忘记密码
+  async forgotPassword(authForgotPasswordDto: AuthForgotPasswordDto) {
+    const user = await this.usersService.findByUsername(
+      authForgotPasswordDto.username,
+    );
+    if (!user) {
+      throw new UnprocessableEntityException({
+        status: HttpStatus.UNPROCESSABLE_ENTITY,
+        errors: {
+          username: '用户不存在',
+        },
+      });
+    }
+    // TODO: 30m 需要提取为环境变量
+    const tokenExpires = Date.now() + ms('30m');
+    const token = await this.jwtService.signAsync(
+      {
+        username: user.username,
+      },
+      {
+        secret: this.configService.get('JWT_RESET_SECRET'),
+        expiresIn: tokenExpires,
+      },
+    );
+    // TODO: 发送邮件
   }
 }
