@@ -10,6 +10,7 @@ export class UsersService {
 
   // 创建用户
   async create(data: CreateUserDto): Promise<any> {
+    console.log('data', data);
     return this.prisma.user.create({
       data: {
         username: data.username,

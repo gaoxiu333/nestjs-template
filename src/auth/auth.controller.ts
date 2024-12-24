@@ -4,30 +4,27 @@ import {
   Get,
   HttpCode,
   HttpStatus,
-  Logger,
   Post,
   Request,
+  UseGuards,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SkipAuth } from './decorators/public.decorator';
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
+import { LocalAuthGuard } from './guard/local.guard';
+import { LoginDto } from './dto/login.dto';
+import { AuthGuard } from '@nestjs/passport';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
 @Controller('auth')
 export class AuthController {
-  private logger = new Logger();
   constructor(private authService: AuthService) {}
 
   @SkipAuth()
   @HttpCode(HttpStatus.OK)
   @Post('login')
-  signIn(@Body() signInDto: CreateUserDto) {
-    console.log('signInDto', signInDto);
-    this.logger.debug('aaa', AuthController.name);
-    this.logger.error('bbb', AuthController.name);
-    this.logger.log('ccc', AuthController.name);
-    this.logger.verbose('ddd', AuthController.name);
-    this.logger.warn('eee', AuthController.name);
-    return this.authService.signIn(signInDto);
+  async login(@Body() loginDto: LoginDto) {
+    return this.authService.login(loginDto);
   }
 
   @SkipAuth()
@@ -36,8 +33,18 @@ export class AuthController {
     return this.authService.register(registerDto);
   }
 
+  // @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
   @Get('profile')
   getProfile(@Request() req) {
     return req.user;
+  }
+
+  // 退出登录
+  @UseGuards(LocalAuthGuard)
+  @Post('logout')
+  logout(@Request() req) {
+    return req.logout(); // TODO: 需要 token 吗？
   }
 }

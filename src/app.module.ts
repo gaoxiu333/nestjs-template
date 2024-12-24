@@ -1,6 +1,7 @@
-import { Module } from '@nestjs/common';
+import { Logger, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { WinstonModule } from 'nest-winston';
+import { PrismaModule, loggingMiddleware } from 'nestjs-prisma';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -11,7 +12,6 @@ import { Demo2Module } from './demo2/demo2.module';
 import appConfig from './config/app.config';
 import { loggerConfig } from './config/logger.config';
 import { RolesModule } from './roles/roles.module';
-import { PrismaModule } from 'nestjs-prisma';
 
 @Module({
   imports: [
@@ -23,6 +23,15 @@ import { PrismaModule } from 'nestjs-prisma';
     }),
     PrismaModule.forRoot({
       isGlobal: true,
+      prismaServiceOptions: {
+        middlewares: [
+          // TODO: add prisma middleware
+          loggingMiddleware({
+            logger: new Logger('Prisma'),
+            logLevel: 'log',
+          }),
+        ],
+      },
     }),
     AuthModule,
     UsersModule,
