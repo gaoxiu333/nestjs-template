@@ -10,6 +10,7 @@ import { AuthService } from './auth.service';
 import { LocalStrategy } from './strategies/local.strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { SecurityConfig } from 'src/config/app-config.type';
+import { PasswordService } from './password/password.service';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { SecurityConfig } from 'src/config/app-config.type';
     AuthService,
     LocalStrategy,
     JwtStrategy,
+    PasswordService,
     // {
     //   provide: APP_GUARD,
     //   useClass: AuthGuard,

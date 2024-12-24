@@ -4,7 +4,6 @@ import {
   UnauthorizedException,
   UnprocessableEntityException,
 } from '@nestjs/common';
-import { compare, hash } from 'bcrypt';
 import * as ms from 'ms';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
@@ -15,6 +14,8 @@ import { LoginDto } from './dto/login.dto';
 import { SecurityConfig } from 'src/config/app-config.type';
 import { AuthForgotPasswordDto } from './dto/auth-forgot-password.dto';
 import { AuthEmailLoginDto } from './dto/auth-email-login.dto';
+import { PasswordService } from './password/password.service';
+import { omit } from 'lodash';
 
 @Injectable()
 export class AuthService {
@@ -22,25 +23,23 @@ export class AuthService {
     private usersService: UsersService,
     private jwtService: JwtService,
     private configService: ConfigService,
+    private passwordService: PasswordService,
   ) {}
   // 用户注册
-  async register(createUserDto: CreateUserDto) {
-    const hashedPassword = await this.hashPassword(createUserDto.password);
+  async register(dto: CreateUserDto) {
+    const hashedPassword = await this.passwordService.hashPassword(
+      dto.password,
+    );
     const user = await this.usersService.create({
-      ...createUserDto,
+      ...dto,
       password: hashedPassword,
     });
 
     return {
-      access_token: this.generateAccessToken({ username: user.username }),
-      refresh_token: this.generateRefreshToken({ username: user.username }),
+      access_token: this.generateAccessToken({ id: user.id }),
+      refresh_token: this.generateRefreshToken({ id: user.id }),
+      user: omit(user, ['password']),
     };
-  }
-
-  // 验证用户
-  // TODO: 这里使用的是纯文本明文密码，但是您可以使用bcrypt之类的库，使用加盐单向哈希算法
-  async validateUser(id: string): Promise<any> {
-    return this.usersService.findById(id);
   }
 
   // 登录
@@ -63,7 +62,10 @@ export class AuthService {
         },
       });
     }
-    const isValidPassword = await compare(loginDto.password, user.password);
+    const isValidPassword = await this.passwordService.comparePassword(
+      loginDto.password,
+      user.password,
+    );
     if (!isValidPassword) {
       throw new UnauthorizedException({
         status: HttpStatus.UNPROCESSABLE_ENTITY,
@@ -77,8 +79,7 @@ export class AuthService {
     });
     return {
       token,
-      refreshToken,
-      tokenExpiresIn,
+      user: omit(user, ['password']),
     };
   }
 
@@ -93,7 +94,7 @@ export class AuthService {
         },
       });
     }
-    const passwordValid = await this.validatePassword(
+    const passwordValid = await this.passwordService.comparePassword(
       authEmailLoginDto.password,
       user.password,
     );
@@ -132,39 +133,6 @@ export class AuthService {
     };
   }
 
-  /**
-   * 密码
-   */
-
-  validatePassword(password: string, hashedPassword: string): Promise<boolean> {
-    return compare(password, hashedPassword);
-  }
-
-  hashPassword(password: string): Promise<string> {
-    return hash(password, this.bcryptSaltRounds);
-  }
-
-  get bcryptSaltRounds(): string | number {
-    const securityConfig = this.configService.get<SecurityConfig>('security');
-    const saltOrRounds = securityConfig.bcryptSaltOrRound;
-
-    return Number.isInteger(Number(saltOrRounds))
-      ? Number(saltOrRounds)
-      : saltOrRounds;
-  }
-
-  private generateAccessToken(payload: { username: string }): string {
-    return this.jwtService.sign(payload);
-  }
-
-  private generateRefreshToken(payload: { username: string }): string {
-    const securityConfig = this.configService.get<SecurityConfig>('security');
-    return this.jwtService.sign(payload, {
-      secret: this.configService.get('JWT_REFRESH_SECRET'),
-      expiresIn: securityConfig.refreshIn,
-    });
-  }
-
   // 忘记密码
   async forgotPassword(authForgotPasswordDto: AuthForgotPasswordDto) {
     const user = await this.usersService.findByUsername(
@@ -190,5 +158,22 @@ export class AuthService {
       },
     );
     // TODO: 发送邮件
+  }
+
+  // 验证用户
+  async validateUser(id: string): Promise<any> {
+    return this.usersService.findById(id);
+  }
+
+  private generateAccessToken(payload: { id: string }): string {
+    return this.jwtService.sign(payload);
+  }
+
+  private generateRefreshToken(payload: { id: string }): string {
+    const securityConfig = this.configService.get<SecurityConfig>('security');
+    return this.jwtService.sign(payload, {
+      secret: this.configService.get('JWT_REFRESH_SECRET'),
+      expiresIn: securityConfig.refreshIn,
+    });
   }
 }
