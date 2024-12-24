@@ -6,16 +6,15 @@ import {
 } from '@nestjs/common';
 import { compare, hash } from 'bcrypt';
 import * as ms from 'ms';
-
+import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
 import { UsersService } from '../users/users.service';
 import { LoginDto } from './dto/login.dto';
-import { ConfigService } from '@nestjs/config';
 import { SecurityConfig } from 'src/config/app-config.type';
 import { AuthForgotPasswordDto } from './dto/auth-forgot-password.dto';
 import { AuthEmailLoginDto } from './dto/auth-email-login.dto';
-import { NotFoundError } from 'rxjs';
 
 @Injectable()
 export class AuthService {
@@ -46,45 +45,6 @@ export class AuthService {
 
   // 登录
   async login(loginDto: LoginDto) {
-    // TODO: 检查密码是否匹配
-    return this.validateLogin(loginDto);
-  }
-
-  // 邮箱登录
-  async loginEmail(authEmailLoginDto: AuthEmailLoginDto) {
-    const user = await this.usersService.findByEmail(authEmailLoginDto.email);
-    if (!user) {
-      throw new UnauthorizedException({
-        status: HttpStatus.UNPROCESSABLE_ENTITY,
-        errors: {
-          email: '用户不存在',
-        },
-      });
-    }
-    const passwordValid = await this.validatePassword(
-      authEmailLoginDto.password,
-      user.password,
-    );
-    if (!passwordValid) {
-      throw new UnauthorizedException({
-        status: HttpStatus.UNPROCESSABLE_ENTITY,
-        errors: {
-          password: '密码不正确',
-        },
-      });
-    }
-    const { token, refreshToken, tokenExpiresIn } = await this.generateToken({
-      id: user.id,
-    });
-    return {
-      token,
-      refreshToken,
-      tokenExpiresIn,
-    };
-  }
-
-  // 检查登录
-  async validateLogin(loginDto: LoginDto): Promise<any> {
     const user = await this.usersService.findByUsername(loginDto.username);
     if (!user) {
       throw new UnauthorizedException({
@@ -121,6 +81,41 @@ export class AuthService {
       tokenExpiresIn,
     };
   }
+
+  // 邮箱登录
+  async loginEmail(authEmailLoginDto: AuthEmailLoginDto) {
+    const user = await this.usersService.findByEmail(authEmailLoginDto.email);
+    if (!user) {
+      throw new UnauthorizedException({
+        status: HttpStatus.UNPROCESSABLE_ENTITY,
+        errors: {
+          email: '用户不存在',
+        },
+      });
+    }
+    const passwordValid = await this.validatePassword(
+      authEmailLoginDto.password,
+      user.password,
+    );
+    if (!passwordValid) {
+      throw new UnauthorizedException({
+        status: HttpStatus.UNPROCESSABLE_ENTITY,
+        errors: {
+          password: '密码不正确',
+        },
+      });
+    }
+    const { token, refreshToken, tokenExpiresIn } = await this.generateToken({
+      id: user.id,
+    });
+    return {
+      token,
+      refreshToken,
+      tokenExpiresIn,
+    };
+  }
+
+  // 检查登录
   private async generateToken({ id }: { id: string }) {
     const securityConfig = this.configService.get<SecurityConfig>('security');
     const tokenExpiresIn = Date.now() + ms(securityConfig.expiresIn);

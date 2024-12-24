@@ -9,25 +9,23 @@ export class UsersService {
   constructor(private prisma: PrismaService) {}
 
   // 创建用户
-  async create(data: CreateUserDto): Promise<any> {
-    console.log('data', data);
+  async create(dto: CreateUserDto): Promise<any> {
     return this.prisma.user.create({
       data: {
-        ...data,
-        username: data.username,
-        password: data.password,
-        email: data.email,
+        ...dto,
+        username: dto.username,
+        password: dto.password,
+        email: dto.email,
         role: 'ADMIN',
       },
     });
   }
   // 更新用户
-  async update(id: string, data: UserDto): Promise<any> {
+  async update(id: string, dto: UserDto): Promise<any> {
     this.prisma.user.update({
       where: { id },
       data: {
-        username: data.username,
-        password: data.password,
+        ...dto,
       },
     });
   }
